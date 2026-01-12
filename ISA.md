@@ -5,8 +5,8 @@ This document defines the Instruction Set Architecture for a custom-made 8-bit C
 
 ## Instruction Format
 Each instruction is 8 bits wide and is formatted as shown:
-* First 4 bits: OPERAND
-* Last 4 bits: OPCODE
+* First 4 bits (0-3): OPERAND
+* Last 4 bits (4-7): OPCODE
 
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 |---|---|---|---|---|---|---|---|
