@@ -1,6 +1,6 @@
 # Instruction Set Architecture (ISA)
 ## Overview
-This document defines the Instruction Set Architecture for a custom-made 8-bit CPU. All software targeting this CPU must conform to the rules defined in this document.
+This document defines the Instruction Set Architecture for a custom-made 8-bit CPU. This CPU follows a multi-cycle microarchitecture; however, instruction timing and internal execution phases are not architecturally visible. All software targeting this CPU must conform to the rules defined in this document.
 
 
 ## Instruction Format
