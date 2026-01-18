@@ -89,6 +89,76 @@ Explanation:
 3. JMP loop jumps back to the ADD 3 instruction, causing a loop
 4. HLT stops the program by halting the CPU
 
+# Execution Model (Microarchitecture)
+
+This CPU is implemented as a **multi-cycle architecture**. Each instruction is executed over several clock cycles using shared hardware resources rather than duplicated functional units. This design choice reduces hardware complexity at the cost of increased control logic.
+
+## Instruction Phases
+
+Instruction execution is divided into four sequential phases, with exactly one phase occurring per clock cycle:
+
+| Phase | Description |
+|------|-------------|
+| Fetch | The Program Counter (PC) supplies an address to ROM, the instruction is loaded into the Instruction Register (IR), and the PC increments |
+| Decode | The opcode is decoded and translated into control signals |
+| Execute 1 | Instruction-specific actions occur (ALU operation or memory access) |
+| Execute 2 | Results are written back to registers or the PC is updated |
+
+This phased approach allows components such as the ALU, RAM, and system bus to be reused across multiple cycles.
+
+## Instruction Timing Examples
+
+The following examples illustrate how individual instructions are executed across multiple cycles.
+
+### LDA (Load Accumulator)
+
+LDA loads a value from memory into Register A. Because memory access and register write-back occur in separate steps, LDA spans multiple cycles.
+
+| Cycle | Action |
+|------|-------|
+| T0 | Fetch instruction from ROM into IR |
+| T1 | Decode instruction as LDA |
+| T2 | Output RAM data onto the data bus |
+| T3 | Load data from the bus into Register A |
+
+### ADD (Add to Accumulator)
+
+ADD adds the value at the specified RAM address to Register A using the ALU.
+
+| Cycle | Action |
+|------|-------|
+| T0 | Fetch instruction from ROM into IR |
+| T1 | Decode instruction as ADD |
+| T2 | Perform ALU addition and output result onto the data bus |
+| T3 | Load ALU result from the bus into Register A |
+
+### JMP (Jump)
+
+JMP updates the Program Counter to the address specified by the instruction operand.
+
+| Cycle | Action |
+|------|-------|
+| T0 | Fetch instruction from ROM into IR |
+| T1 | Decode instruction as JMP |
+| T2 | Waiting cycle (no data movement) |
+| T3 | Load PC with the operand value |
+
+## State Storage Between Cycles
+
+Several storage elements allow instructions to span multiple clock cycles without losing intermediate state:
+
+- **Instruction Register (IR):** Holds the current instruction during decode and execution
+- **Register A:** Stores intermediate and final results of ALU operations
+- **RAM:** Stores program data and operands across instructions
+- **Program Counter (PC):** Holds the address of the next instruction and may be updated incrementally or via jumps
+- **Flags (Zero, Carry):** Preserve ALU status information for use by subsequent instructions
+
+These elements enable multi-cycle execution without requiring hardware duplication.
+
+## Architectural Summary
+
+This CPU employs a multi-cycle execution model in which instructions complete over multiple clock cycles using shared hardware resources. This approach simplifies the datapath and avoids pipeline hazards at the cost of lower instruction throughput compared to pipelined designs.
+
 # Pipeline Thought Experiment
 
 ## Pipeline Stages
