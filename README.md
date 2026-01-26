@@ -143,7 +143,7 @@ HLT
 
 ## Execution Model (Microarchitecture)
 
-This CPU is implemented as a **multi-cycle architecture**. Each instruction is executed over multiple clock cycles using shared hardware resources rather than duplicated functional units. This design minimizes hardware complexity while increasing control logic complexity.
+This CPU follows a **multi-cycle architecture** design. Each instruction is executed over multiple clock cycles using shared hardware resources rather than duplicated units. However, more complex instructions may introduce dedicated hardware to properly execute. Still, instruction behavior is majorly determined by control logic.
 
 ---
 
@@ -153,8 +153,8 @@ Instruction execution is divided into four sequential phases, with exactly one p
 
 | Phase | Description |
 |------|-------------|
-| Fetch | PC supplies address to ROM; instruction loaded into IR; PC increments |
-| Decode | Opcode is decoded into control signals |
+| Fetch | PC sends address to ROM; instruction loaded into IR |
+| Decode | PC increments; Opcode is decoded into control signals |
 | Execute 1 | Instruction-specific computation or memory access |
 | Execute 2 | Write-back to registers or PC update |
 
@@ -200,7 +200,36 @@ This phased approach enables reuse of the ALU, RAM, and system bus.
 | T2 | Evaluate Zero or Carry flag |
 | T3 | If condition is true, load PC with operand |
 
+### LDA 14 (Keyboard Input)
+
+
+| Cycle | Action |
+|------|--------|
+| T0 | Fetch instruction |
+| T1 | Decode LDA 14 (initialize keyboard input state) |
+| T2+ | Execute keyboard input microcode (variable length) |
+| Tn | Final accumulated value loaded into Register A |
+
 ---
+
+## Keyboard Input Instruction (LDA 14)
+`LDA 14` is a special instruction that allows input through an external keyboard.
+
+Unlike standard load instructions, `LDA 14` executes a variable-length microcoded routine that:
+- Reads ASCII key input from keyboard (typed into the keyboard component)
+- Ignores non-digit inputs
+- Converts valid digits to numeric values
+- Accumulates multi-digit decimal input using iterative multiplication
+- Terminates execution when the Enter key is detected
+
+### Execution Behavior
+- Initialization occurs during the Decode phase
+- Input processing loops during Execute
+- During Writeback, the final numeric value is stored in Register A
+
+
+### Design Rationale
+This instruction demonstrates how complex I/O behavior can be implemented using a multi-cycle execution model without expanding the base instruction set.
 
 ## State Storage Between Cycles
 
@@ -216,15 +245,15 @@ Several storage elements allow instructions to span multiple clock cycles:
 
 ## Memory-Mapped I/O
 
-This CPU implements basic input and output using memory-mapped I/O:
+This CPU implements input and output using memory-mapped I/O:
 
-- **Address 14:** Input Register 
+- **Address 14:** Input Register (keyboard input)
 - **Address 15:** Output Register
 
-Executing `LDA 14` reads Input Register into Register A.  
 Executing `STA 15` writes Register A to Output Register.
+Executing `LDA 14` initiates a specialized keyboard input sequence involving a variable amount of cycles and writes accumulated output to Register A.
 
-This approach avoids specialized I/O instructions and keeps the instruction set minimal.
+This approach avoids specialized I/O instructions while still enabling complex I/O behavior.
 
 ---
 
@@ -263,7 +292,6 @@ The CPU employs a multi-cycle execution model in which each instruction fully co
 Planned and potential extensions include:
 
 - **Microcoded Control Unit:** Replace hardwired control logic with a microcode ROM to simplify instruction sequencing and enable easier ISA expansion.
-- **Enhanced Keyboard Input:** Support multi-digit decimal input using iterative accumulation logic (`value ← value × 10 + digit`). **(IN PROGRESS)**
 - **Expanded Control Flow:** Add additional conditional branches such as JNZ and JNC.
 - **Pipelined Variant:** Implement a pipelined version of the CPU to explore hazard detection and mitigat
 
