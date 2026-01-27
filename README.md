@@ -283,7 +283,7 @@ This CPU prioritizes simplicity and determinism over performance. While slower t
 
 ## Architectural Summary
 
-The CPU employs a multi-cycle execution model in which each instruction fully completes before the next begins. This avoids data and control hazards entirely and simplifies the control logic, at the cost of lower instruction throughput compared to pipelined designs.
+The CPU inherits a multi-cycle execution model in which each instruction fully completes before the next instruction begins. This avoids data and control hazards entirely and simplifies the control logic, at the cost of lower instruction throughput compared to pipelined designs.
 
 ---
 
@@ -293,6 +293,6 @@ Planned and potential extensions include:
 
 - **Microcoded Control Unit:** Replace hardwired control logic with a microcode ROM to simplify instruction sequencing and enable easier ISA expansion.
 - **Expanded Control Flow:** Add additional conditional branches such as JNZ and JNC.
-- **Pipelined Variant:** Implement a pipelined version of the CPU to explore hazard detection and mitigat
+- **Pipelined Variant:** Implement a pipelined version of the CPU to explore hazard detection and mitigation techniques.
 
 
