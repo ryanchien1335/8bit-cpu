@@ -2,13 +2,13 @@
 
 ## Overview
 
-This project implements a custom-designed 8-bit CPU built in Logisim, accompanied by a Python-based assembler. The CPU is designed as a **multi-cycle, bus-based architecture** that prioritizes simplicity, correctness, and architectural clarity over raw performance. Rather than duplicating hardware to increase throughput, the design reuses a small set of functional units across multiple clock cycles, mirroring the structure of early educational and historical CPU designs.
+This project implements a custom-designed 8-bit CPU built in Logisim, accompanied by a Python-based assembler. The CPU is designed as a **multi-cycle, bus-based architecture** that prioritizes simplicity, correctness, and architectural clarity over raw performance. Rather than duplicating hardware to increase throughput, the design reuses a small set of  units across multiple clock cycles, mimicking the structure of early educational and historical CPU designs.
 
 The project serves both as a functional processor and as an exploration of core computer architecture concepts, including instruction sequencing, control logic, memory access, condition flags, and program control flow. It is intended as a strong foundational project for further experimentation with I/O, microcode, and pipelining.
 
 ### Current Features
 - 8-bit accumulator-based architecture
-- Shared system data bus
+- Shared data bus
 - Multi-cycle instruction execution
 - Arithmetic and logic operations via a single ALU
 - Conditional and unconditional branching
@@ -230,6 +230,8 @@ Unlike standard load instructions, `LDA 14` executes a variable-length microcode
 
 ### Design Rationale
 This instruction demonstrates how complex I/O behavior can be implemented using a multi-cycle execution model without expanding the base instruction set.
+
+---
 
 ## State Storage Between Cycles
 
