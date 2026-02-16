@@ -20,8 +20,8 @@ Each instruction is 8 bits wide and is formatted as shown:
 | 0010     | STA       | Store A to RAM  |
 | 0011     | ADD       | Add RAM to A and store result in A      |
 | 0100     | SUB       | Sub RAM from A and store result in A    |
-| 0101     | JZ        | Jump to PC address if Z = 1    |
-| 0110     | JC        | Jump to PC address if C = 1     |
+| 1100     | JZ        | Jump to PC address if Z = 1    |
+| 1101     | JC        | Jump to PC address if C = 1     |
 | 1110     | JMP       | Jump to PC address      |
 | 1111     | HLT       | Halt CPU     |
 
