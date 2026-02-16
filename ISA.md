@@ -32,6 +32,19 @@ Each instruction is 8 bits wide and is formatted as shown:
 * For jump instructions, the operand represents a ROM address.
 * For instructions that do not use an operand (NOP, HLT), the operand bits are ignored.
 
+## Special Instructions
+
+### LDA 14 (Keyboard Input)
+
+- Initiates multi-digit decimal keyboard input
+- Waits for user to type digits 0-9
+- Accumulates digits as a decimal number
+- Terminates on Enter key (0x0D) or invalid input
+- Final value stored in Register A
+- Variable execution time (depends on number of digits entered)
+
+**Note**: This instruction is internally implemented using microcode and may take significantly more cycles than standard LDA.
+
 
 ## Example Program
 0. LDA 0
