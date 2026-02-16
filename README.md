@@ -146,19 +146,42 @@ HLT
 This CPU follows a **multi-cycle architecture** design. Each instruction is executed over multiple clock cycles using shared hardware resources rather than duplicated units. However, more complex instructions may introduce dedicated hardware to properly execute. Still, instruction behavior is majorly determined by control logic.
 
 ---
+## Control Unit Architecture
 
-## Instruction Phases
+This CPU now uses a **microcoded control unit** rather than the previously implemented hardwired logic. Each instruction is composed of a sequence of microinstructions stored in a control ROM.
 
-Instruction execution is divided into four sequential phases, with exactly one phase occurring per clock cycle:
+### Microcode ROM Structure
+
+- **Address Format**: `[OPCODE (4 bits)][Substate (4 bits)]`
+- Each instruction occupies a block of microcode starting at address `OPCODE << 4`
+- Microinstructions contain control signals for all CPU components
+
+### Conditional Microcode Branching
+
+The microcode supports conditional branches based on:
+- Zero flag (`is_Z`)
+- Carry flag (`is_C`)
+- Special operand detection (`is_LDA_KBD` for operand == 14)
+- Keyboard input validation (`kbd_digit_valid`)
+
+This allows complex instructions like multi-digit keyboard input to be implemented entirely in microcode alone along with the other instructions.
+
+## Instruction Execution Model
+
+Instruction execution is controlled by a **microcode ROM**. Each instruction is decomposed into a sequence of microinstructions, with each microinstruction executing in one clock cycle.
+
+While instructions conceptually follow a fetch-decode-execute pattern, the exact number of cycles and internal operations are determined by the microcode sequence for each instruction.
+
+### Typical Instruction Flow
 
 | Phase | Description |
 |------|-------------|
 | Fetch | PC sends address to ROM; instruction loaded into IR |
-| Decode | PC increments; Opcode is decoded into control signals |
-| Execute 1 | Instruction-specific computation or memory access |
-| Execute 2 | Write-back to registers or PC update |
+| Decode | Opcode decoded; microcode jumps to instruction-specific routine |
+| Execute | Variable-length microcode sequence performs instruction logic |
+| Completion | Control returns to fetch phase for next instruction |
 
-This phased approach enables reuse of the ALU, RAM, and system bus.
+The microcode architecture allows instructions to take varying numbers of cycles based on their complexity.
 
 ---
 
@@ -166,66 +189,94 @@ This phased approach enables reuse of the ALU, RAM, and system bus.
 
 ### LDA (Load Accumulator)
 
-| Cycle | Action |
-|------|--------|
-| T0 | Fetch instruction into IR |
-| T1 | Decode LDA |
-| T2 | Output RAM data onto the data bus |
-| T3 | Load data from bus into Register A |
+| Microinstruction | Action |
+|------------------|--------|
+| Fetch | Fetch instruction into IR |
+| Decode | Decode LDA, jump to LDA microcode block |
+| Execute | Output RAM data onto bus, load into Register A |
+
+**Total cycles**: 3-4 (depending on microcode implementation)
 
 ### ADD (Add to Accumulator)
 
-| Cycle | Action |
-|------|--------|
-| T0 | Fetch instruction |
-| T1 | Decode ADD |
-| T2 | ALU computes A + RAM[addr] |
-| T3 | Load ALU result into Register A |
+| Microinstruction | Action |
+|------------------|--------|
+| Fetch | Fetch instruction into IR |
+| Decode | Decode ADD, jump to ADD microcode block |
+| Execute | Load RAM operand, ALU computes A + operand |
+| Writeback | Store ALU result into Register A |
+
+**Total cycles**: 4-5
 
 ### JMP (Jump)
 
-| Cycle | Action |
-|------|--------|
-| T0 | Fetch instruction |
-| T1 | Decode JMP |
-| T2 | Idle / wait |
-| T3 | Load PC with operand |
+| Microinstruction | Action |
+|------------------|--------|
+| Fetch | Fetch instruction into IR |
+| Decode | Decode JMP, jump to JMP microcode block |
+| Execute | Load PC with operand address |
+
+**Total cycles**: 3
 
 ### JZ / JC (Conditional Jump)
 
-| Cycle | Action |
-|------|--------|
-| T0 | Fetch instruction |
-| T1 | Decode JZ or JC |
-| T2 | Evaluate Zero or Carry flag |
-| T3 | If condition is true, load PC with operand |
+| Microinstruction | Action |
+|------------------|--------|
+| Fetch | Fetch instruction into IR |
+| Decode | Decode JZ/JC, jump to conditional jump microcode |
+| Execute | Evaluate flag condition; conditionally update PC |
+
+**Total cycles**: 3
 
 ### LDA 14 (Keyboard Input)
 
+| Microinstruction | Action |
+|------------------|--------|
+| Fetch | Fetch instruction into IR |
+| Decode | Decode LDA 14, jump to keyboard microcode block |
+| Execute | Variable-length loop: read keyboard, validate input, accumulate digits |
+| Completion | Exit loop on termination condition; accumulated value remains in Register A |
 
-| Cycle | Action |
-|------|--------|
-| T0 | Fetch instruction |
-| T1 | Decode LDA 14 (initialize keyboard input state) |
-| T2+ | Execute keyboard input microcode (variable length) |
-| Tn | Final accumulated value loaded into Register A |
+**Total cycles**: Variable (depends on number of digits entered)
 
 ---
 
 ## Keyboard Input Instruction (LDA 14)
-`LDA 14` is a special instruction that allows input through an external keyboard.
 
-Unlike standard load instructions, `LDA 14` executes a variable-length microcoded routine that:
-- Reads ASCII key input from keyboard (typed into the keyboard component)
-- Ignores non-digit inputs
-- Converts valid digits to numeric values
-- Accumulates multi-digit decimal input using iterative multiplication
-- Terminates execution when the Enter key is detected
+LDA 14 is implemented as a **microcoded multi-digit decimal input routine**.
+
+### Microcode Sequence
+
+The instruction executes the following substates in a loop:
+
+| Substate | Operation |
+|----------|-----------|
+| Init | Clear Register A |
+| 000 | Read keyboard (RAM[14]) → TEMP, check for exit/valid digit |
+| 001 | Convert ASCII to digit (TEMP - 0x30) → DIGIT |
+| 010 | A << 3 → TEMP1 (multiply A by 8) |
+| 011 | A << 1 → TEMP2 (multiply A by 2) |
+| 100 | TEMP1 + TEMP2 → TEMP3 (A × 10) |
+| 101 | TEMP3 + DIGIT → A, loop back to 000 |
+
+### Termination
+
+- **Valid digit (0-9)**: Loop continues
+- **Else**: Exit loop, final value remains in A
+
+
+### Example
+
+Typing `1`, `2`, `3`, `Enter`:
+1. First digit: A = 0×10 + 1 = 1
+2. Second digit: A = 1×10 + 2 = 12
+3. Third digit: A = 12×10 + 3 = 123
+4. Enter: Exit with A = 123
 
 ### Execution Behavior
 - Initialization occurs during the Decode phase
 - Input processing loops during Execute
-- During Writeback, the final numeric value is stored in Register A
+- When the instruction terminates, the Register A contains the final numeric value.
 
 
 ### Design Rationale
@@ -293,7 +344,7 @@ The CPU inherits a multi-cycle execution model in which each instruction fully c
 
 Planned and potential extensions include:
 
-- **Microcoded Control Unit:** Replace hardwired control logic with a microcode ROM to simplify instruction sequencing and enable easier ISA expansion.
+- **✓ Microcoded Control Unit**: Implemented microcode ROM with conditional branching support
 - **Expanded Control Flow:** Add additional conditional branches such as JNZ and JNC.
 - **Pipelined Variant:** Implement a pipelined version of the CPU to explore hazard detection and mitigation techniques.
 
