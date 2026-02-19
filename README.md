@@ -89,8 +89,8 @@ Each instruction is 8 bits:
 | 0010 | STA | addr | RAM[addr] ← A |
 | 0011 | ADD | addr | A ← A + RAM[addr] |
 | 0100 | SUB | addr | A ← A − RAM[addr] |
-| 0101 | JZ  | addr | PC ← addr if Zero flag = 1 |
-| 0110 | JC  | addr | PC ← addr if Carry flag = 1 |
+| 1100 | JZ  | addr | PC ← addr if Zero flag = 1 |
+| 1101 | JC  | addr | PC ← addr if Carry flag = 1 |
 | 1110 | JMP | addr | PC ← addr |
 | 1111 | HLT | — | Halt CPU |
 
@@ -147,7 +147,7 @@ HLT
 ``` text
 00010000
 01000001
-01010100
+11000100
 00010010
 11110000
 ```
@@ -276,6 +276,25 @@ The instruction executes the following substates in a loop:
 | 011 | A << 1 → TEMP2 (multiply A by 2) |
 | 100 | TEMP1 + TEMP2 → TEMP3 (A × 10) |
 | 101 | TEMP3 + DIGIT → A, loop back to 000 |
+
+### Cycle-Level Micro-Operations
+| uPC  | Micro-Operation                     | Description |
+|------|--------------------------------------|------------|
+| 0000 | Check `OPERAND = 14`                 | Branch into keyboard routine if operand equals 14 |
+| 0001 | A ← 0                                | Clear accumulator|
+| 0010 | KBD → TEMP                           | Read keyboard input into TEMP; branch to 0000 if invalid digit |
+| 0011 | TEMP − 0x30 → ALU                    | Subtract ASCII offset (48) using ALU |
+| 0100 | ALU → DIGIT                          | Store converted numeric digit |
+| 0101 | A << 3 → TEMP1                       | Compute A × 8 using shift operation |
+| 0110 | A << 1 → TEMP2                       | Compute A × 2 using shift operation |
+| 0111 | TEMP1 → B                            | Load TEMP1 into register B |
+| 1000 | TEMP2 + B → ALU                      | Compute (A × 8) + (A × 2) = A × 10 |
+| 1001 | ALU → TEMP3                          | Store intermediate result (A × 10) |
+| 1010 | TEMP3 → B                            | Move intermediate result into register B |
+| 1011 | DIGIT + B → ALU                      | Add new digit to accumulated value |
+| 1100 | ALU → A                              | Update accumulator with new value |
+| 1101 | Branch to 0010                       | Repeat for next digit |
+
 
 ### Termination
 
