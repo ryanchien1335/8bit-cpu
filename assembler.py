@@ -4,8 +4,8 @@ OPCODES = {
     "STA": 0b0010,
     "ADD": 0b0011,
     "SUB": 0b0100,
-    "JZ": 0b0101,
-    "JC": 0b0110,
+    "JZ": 0b1100,
+    "JC": 0b1101,
     "JMP": 0b1110,
     "HLT": 0b1111,
 }
@@ -88,6 +88,7 @@ def assemble(filename):
     print("Labels:", labels)
 
     second_pass(lines, labels)
+
 
 
 assemble("test.asm")
