@@ -89,8 +89,8 @@ Each instruction is 8 bits:
 | 0010 | STA | addr | RAM[addr] ← A |
 | 0011 | ADD | addr | A ← A + RAM[addr] |
 | 0100 | SUB | addr | A ← A − RAM[addr] |
-| 1100 | JC  | addr | PC ← addr if Carry flag = 1 |
-| 1101 | JZ  | addr | PC ← addr if Zero flag = 1 |
+| 1100 | JZ  | addr | PC ← addr if Zero flag = 1 |
+| 1101 | JC  | addr | PC ← addr if Carry flag = 1 |
 | 1110 | JMP | addr | PC ← addr |
 | 1111 | HLT | — | Halt CPU |
 
