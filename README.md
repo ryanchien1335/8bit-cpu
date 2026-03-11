@@ -20,9 +20,9 @@ This project explores the internal architecture of a simple processor and demons
 - Example Microcode (ADD Instruction)
 - Instruction Cycle Timing
 - Keyboard Input Routine
-- Example Programs
-- Assembler
 - Memory Map
+- Example Program
+- Assembler
 - Design Philosophy
 - Future Improvements
 
@@ -55,6 +55,7 @@ Major components include:
 
 - Program Counter (PC)
 - Instruction Register (IR)
+- Operand Register
 - Microprogram Counter (uPC)
 - Microcode ROM
 - Arithmetic Logic Unit (ALU)
@@ -121,7 +122,9 @@ Each instruction is **8 bits**:
 [ OPCODE (4 bits) ] [ OPERAND (4 bits) ]
 ```
 
-Example:
+Because the operand field is **4 bits**, the CPU can directly address **16 memory locations (0–15)**.
+
+Example instruction:
 
 ```
 0001 0010
@@ -131,6 +134,8 @@ Example:
 0001 → LDA
 0010 → address 2
 ```
+
+Most instructions use a **second program byte** to store their operand value.
 
 ---
 
@@ -220,8 +225,9 @@ Typical execution phases:
 
 | Phase | Description |
 |------|------|
-|Fetch|Load instruction from program memory|
+|Fetch|Load instruction opcode from program memory|
 |Decode|Microcode selects instruction routine|
+|Operand Fetch|Retrieve operand from program memory|
 |Execute|Perform instruction logic|
 |Completion|Return to fetch cycle|
 
@@ -360,7 +366,7 @@ A = 123
 
 # Memory Map
 
-The CPU uses **memory-mapped I/O**, meaning certain addresses do not correspond to physical RAM but instead interact with hardware devices.
+The CPU uses **memory-mapped I/O**, meaning certain addresses interact with hardware devices rather than physical RAM.
 
 | Address | Purpose |
 |------|------|
@@ -368,7 +374,7 @@ The CPU uses **memory-mapped I/O**, meaning certain addresses do not correspond 
 |14|Keyboard input (memory-mapped I/O)|
 |15|Output register (memory-mapped I/O)|
 
-Addresses **14 and 15** are intercepted by hardware rather than the RAM module.
+Addresses **14 and 15** are intercepted by hardware instead of the RAM module.
 
 Examples:
 
@@ -384,7 +390,8 @@ STA 15
 
 Writes the accumulator value to the **output register**, which drives the LED display.
 
-This approach allows I/O devices to be accessed using the same instructions as normal memory.
+This allows I/O devices to be accessed using normal memory instructions.
+
 ---
 
 # Example Program
