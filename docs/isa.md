@@ -47,6 +47,10 @@ OP3 OP2 OP1 OP0  X   X   X   X
 - PUSH
 - POP
 - RET
+- IRET
+- EI
+- LDK
+- OUT
 
 ---
 
@@ -98,7 +102,7 @@ The operand is taken entirely from the **second byte**.
 
 | Opcode | Instruction | Description |
 |------|------|------|
-| 0000 | NOP | No operation |
+| 0000 | (reserved) | Internal microcode entry (interrupt check / fetch / decode) |
 | 0001 | LDA addr | A ← RAM[addr] |
 | 0010 | STA addr | RAM[addr] ← A |
 | 0011 | ADD addr | A ← A + RAM[addr] |
@@ -107,6 +111,9 @@ The operand is taken entirely from the **second byte**.
 | 0110 | POP | Pop stack value into Register A |
 | 0111 | CALL addr | Push PC to stack and jump to addr |
 | 1000 | RET | Pop return address from stack into PC |
+| 1001 | NOP | No operation |
+| 1010 | IRET | Return from interrupt |
+| 1011 | EI | Enable interrupts |
 | 1100 | JZ addr | Jump if Zero flag = 1 |
 | 1101 | JC addr | Jump if Carry flag = 1 |
 | 1110 | JMP addr | Unconditional jump |
@@ -164,6 +171,38 @@ The **lower 4 bits of the first instruction byte are ignored**.
 
 ---
 
+## Special I/O Instructions
+
+In addition to memory-mapped I/O, the CPU provides dedicated single-byte instructions
+for input and output.
+
+---
+
+### LDK — Keyboard Input
+
+```
+LDK
+```
+
+Encoding: `0x1E`
+
+Reads a multi-digit decimal number from the keyboard input device and stores the result
+in **Register A**.
+
+---
+
+### OUT — Output Register
+
+```
+OUT
+```
+
+Encoding: `0x2F`
+
+Writes the value in **Register A** to the **output hardware (LED display)**.
+
+---
+
 ## Memory-Mapped I/O
 
 This CPU implements **input and output using memory-mapped registers**.
@@ -201,6 +240,13 @@ STA 15
 ```
 
 writes the value in **Register A** to the **output hardware (LED display)**.
+
+---
+
+### Note
+
+Equivalent functionality is also available through dedicated instructions (`LDK`, `OUT`)
+for more compact instruction encoding.
 
 ---
 
