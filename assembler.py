@@ -1,7 +1,7 @@
 import sys
 
+# Base opcode map for normal instructions
 OPCODES = {
-    "NOP":  0b0000,
     "LDA":  0b0001,
     "STA":  0b0010,
     "ADD":  0b0011,
@@ -10,36 +10,81 @@ OPCODES = {
     "POP":  0b0110,
     "CALL": 0b0111,
     "RET":  0b1000,
+    "NOP":  0b1001,
+    "IRET": 0b1010,
+    "EI":   0b1011,
     "JZ":   0b1100,
     "JC":   0b1101,
     "JMP":  0b1110,
     "HLT":  0b1111,
 }
 
-NO_OPERAND = {"NOP", "HLT", "RET", "PUSH", "POP"}
+# Custom one-byte special instructions
+SPECIAL_BYTES = {
+    "LDK": 0x1E,   # special keyboard-input instruction
+    "OUT": 0x2F,   # special output instruction
+}
+
+NO_OPERAND = {"PUSH", "POP", "RET", "NOP", "IRET", "EI", "HLT"}
+WITH_OPERAND = {"LDA", "STA", "ADD", "SUB", "CALL", "JZ", "JC", "JMP"}
 
 
 def parse_line(line):
-    # Remove comments
     line = line.split(";")[0]
     return line.strip()
+
+
+def instruction_size(mnemonic):
+    if mnemonic in SPECIAL_BYTES:
+        return 1
+    if mnemonic in NO_OPERAND:
+        return 1
+    if mnemonic in WITH_OPERAND:
+        return 2
+    raise ValueError(f"Unknown instruction: {mnemonic}")
+
+
+def parse_operand(operand_text, labels):
+    if operand_text.startswith(("0x", "0X")):
+        operand = int(operand_text, 16)
+    elif operand_text.startswith(("0b", "0B")):
+        operand = int(operand_text, 2)
+    elif operand_text.isdigit():
+        operand = int(operand_text)
+    else:
+        if operand_text not in labels:
+            raise ValueError(f"Undefined label: {operand_text}")
+        operand = labels[operand_text]
+
+    if operand < 0 or operand > 255:
+        raise ValueError(f"Operand out of range (0–255): {operand}")
+
+    return operand
 
 
 def first_pass(lines):
     labels = {}
     address = 0
 
-    for line in lines:
-        line = parse_line(line)
+    for raw_line in lines:
+        line = parse_line(raw_line)
 
         if not line:
             continue
 
         if line.endswith(":"):
-            label = line[:-1]
+            label = line[:-1].strip()
+            if not label:
+                raise ValueError("Empty label definition")
+            if label in labels:
+                raise ValueError(f"Duplicate label: {label}")
             labels[label] = address
-        else:
-            address += 1
+            continue
+
+        parts = line.split()
+        mnemonic = parts[0].upper()
+
+        address += instruction_size(mnemonic)
 
     return labels
 
@@ -47,8 +92,8 @@ def first_pass(lines):
 def second_pass(lines, labels):
     machine_code = []
 
-    for line in lines:
-        line = parse_line(line)
+    for raw_line in lines:
+        line = parse_line(raw_line)
 
         if not line or line.endswith(":"):
             continue
@@ -56,50 +101,48 @@ def second_pass(lines, labels):
         parts = line.split()
         mnemonic = parts[0].upper()
 
+        # Custom one-byte special instructions
+        if mnemonic in SPECIAL_BYTES:
+            if len(parts) != 1:
+                raise ValueError(f"{mnemonic} does not take an operand")
+            machine_code.append(SPECIAL_BYTES[mnemonic])
+            continue
+
         if mnemonic not in OPCODES:
             raise ValueError(f"Unknown instruction: {mnemonic}")
 
         opcode = OPCODES[mnemonic]
+        opcode_byte = (opcode << 4)
 
-        # Instructions without operands
         if mnemonic in NO_OPERAND:
-            operand = 0
+            if len(parts) != 1:
+                raise ValueError(f"{mnemonic} does not take an operand")
+            machine_code.append(opcode_byte)
+
+        elif mnemonic in WITH_OPERAND:
+            if len(parts) != 2:
+                raise ValueError(f"{mnemonic} requires exactly one operand")
+
+            operand = parse_operand(parts[1], labels)
+            machine_code.append(opcode_byte)
+            machine_code.append(operand)
 
         else:
-            if len(parts) < 2:
-                raise ValueError(f"Missing operand for {mnemonic}")
-
-            operand_text = parts[1]
-
-            # numeric operand
-            if operand_text.isdigit():
-                operand = int(operand_text)
-
-            # label operand
-            else:
-                if operand_text not in labels:
-                    raise ValueError(f"Undefined label: {operand_text}")
-                operand = labels[operand_text]
-
-        if operand < 0 or operand > 15:
-            raise ValueError("Operand out of range (0–15)")
-
-        instruction = (opcode << 4) | operand
-        machine_code.append(instruction)
+            raise ValueError(f"Unhandled instruction type: {mnemonic}")
 
     return machine_code
 
 
 def assemble(filename):
-    with open(filename) as f:
+    with open(filename, "r") as f:
         lines = f.readlines()
 
     labels = first_pass(lines)
     machine_code = second_pass(lines, labels)
 
     print("Machine code (hex):")
-    for instr in machine_code:
-        print(f"{instr:02X}")
+    for byte in machine_code:
+        print(f"{byte:02X}")
 
 
 if __name__ == "__main__":

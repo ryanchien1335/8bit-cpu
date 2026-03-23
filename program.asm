@@ -1,56 +1,43 @@
-; ===============================
-; 8-Bit CPU Full Instruction Demo
-; Demonstrates all current instructions
-; ===============================
+; RAM and arithmetic
+LDA 1
+STA 3
+LDA 2
+STA 4
+LDA 3
+ADD 4
+STA 5
+SUB 1
 
-; Initialize RAM for testing
-LDA 1          ; Load RAM[1] into A
-STA 3          ; Store A into RAM[3]
-LDA 2          ; Load RAM[2] into A
-STA 4          ; Store A into RAM[4]
+; Conditional branching
+JZ zero_label
+JC carry_label
 
-; Basic arithmetic
-LDA 3          ; Load RAM[3]
-ADD 4          ; Add RAM[4]
-STA 5          ; Store result in RAM[5]
-SUB 1          ; Subtract RAM[1], result in A
+; Stack and subroutine
+PUSH
+LDA 0
+CALL subroutine
+POP
 
-; Conditional jumps
-JZ zero_label  ; Jump if result was zero
-JC carry_label ; Jump if carry set
+; Keyboard input and output
+LDK        ; special: read from keyboard (1E)
+OUT        ; special: write to output (2F)
 
-; Stack operations
-PUSH A         ; Push current A onto stack
-LDA 0          ; Load RAM[0] for testing
-CALL subroutine ; Call a subroutine
-POP A          ; Pop value back into A
-
-; Output and I/O
-LDA 14         ; Read a number from keyboard
-STA 15         ; Output to LED register
-
-; Loop
+; Main loop
 JMP start_loop
 
-; ===============================
 ; Subroutine
-; ===============================
 subroutine:
     LDA 1
     ADD 2
     RET
 
-; ===============================
-; Conditional Labels
-; ===============================
+; Branch targets
 zero_label:
-    NOP          ; No operation if zero
+    NOP
 
 carry_label:
-    NOP          ; No operation if carry
+    NOP
 
-; ===============================
-; Infinite loop to end program
-; ===============================
+; Infinite loop
 start_loop:
     JMP start_loop
