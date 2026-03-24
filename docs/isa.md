@@ -4,11 +4,15 @@
 
 This document defines the Instruction Set Architecture for a custom 8-bit CPU.
 
-The processor uses a **multi-cycle microcoded control unit**, but instruction timing and
-internal microcode states are **not architecturally visible to software**.
+The processor uses a **multi-cycle microcoded control unit**.
 
-Instructions may be either **single-byte** or **two-byte** depending on whether an
-operand is required.
+While internal microcode states and control signals are not architecturally visible 
+to software, each instruction executes over a well-defined sequence of clock cycles.
+
+Instruction timing is therefore deterministic and is documented to support 
+performance analysis and deeper architectural understanding.
+
+Instructions may be either **single-byte** or **two-byte**, depending on whether an operand is required.
 
 All software targeting this CPU must conform to the rules defined in this document.
 
@@ -269,5 +273,46 @@ start:
 - All arithmetic instructions update the **Zero (Z)** and **Carry (C)** flags.
 - Conditional jumps read these flags to determine program flow.
 - Stack behavior is controlled by the hardware **stack pointer register**.
-- Instruction execution time varies depending on the **microcode sequence**.
+- Instruction execution time is determined by the underlying **microcode sequence**.
 - Two-byte instructions automatically trigger a **second fetch cycle**.
+
+---
+
+## Instruction Timing
+
+Although the internal microcode implementation is not architecturally visible,
+each instruction executes over a deterministic number of clock cycles.
+
+These cycle counts include:
+
+- interrupt check
+- instruction fetch
+- decode/dispatch
+- execution micro-operations
+
+### Cycle Table
+
+| Instruction | Bytes | Cycles | Notes |
+|------------|------|--------|------|
+| LDA addr   | 2    | 9      | Includes operand fetch and memory read |
+| STA addr   | 2    | 7      | Includes memory write |
+| ADD addr   | 2    | 9      | Includes memory read and ALU operation |
+| SUB addr   | 2    | 9      | Includes memory read and ALU operation |
+| PUSH       | 1    | 6      | Stack write (SP decrement + RAM write) |
+| POP        | 1    | 6      | Stack read (RAM read + SP increment) |
+| CALL addr  | 2    | 8      | Push return address + jump |
+| RET        | 1    | 7      | Pop return address into PC |
+| NOP        | 1    | 4      | No operation |
+| IRET       | 1    | 12     | Restores PC and interrupt state |
+| EI         | 1    | 4      | Enable interrupts |
+| JMP addr   | 2    | 5      | Direct PC update |
+| JZ addr    | 2    | 5–6    | 5 if not taken, 6 if taken |
+| JC addr    | 2    | 5–6    | 5 if not taken, 6 if taken |
+| HLT        | 1    | 4      | Enters halt state |
+
+### Notes
+
+- All instructions include a shared **fetch and dispatch overhead**.
+- Conditional branches take **one additional cycle when the branch is taken**.
+- I/O instructions such as `LDK` have **variable execution time** depending on input.
+- Cycle counts are derived from the current microcode implementation and may change if the microarchitecture is modified.
