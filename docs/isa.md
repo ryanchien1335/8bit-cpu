@@ -316,3 +316,23 @@ These cycle counts include:
 - Conditional branches take **one additional cycle when the branch is taken**.
 - I/O instructions such as `LDK` have **variable execution time** depending on input.
 - Cycle counts are derived from the current microcode implementation and may change if the microarchitecture is modified.
+
+---
+
+## Control-Flow Overhead
+
+Using the instruction timing defined above, higher-level control-flow
+operations incur the following overhead:
+
+- `CALL addr`: 8 cycles
+- `RET`: 7 cycles
+- Total `CALL` + `RET` overhead: 15 cycles
+
+Interrupt handling incurs the following minimum overhead:
+
+- interrupt entry: approximately 5 cycles
+- `IRET`: 12 cycles
+- total interrupt overhead: approximately 17 cycles
+
+These values are derived from the current microcode implementation and are provided
+for performance analysis only.
