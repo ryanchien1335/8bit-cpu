@@ -120,6 +120,35 @@ Execution cycles (execute phase only): 3
 
 ---
 
+## Control-Flow Overhead
+
+Using the stack-based control-flow operations defined above, subroutine calls
+incur a fixed execution overhead.
+
+A full subroutine call consists of a `CALL` followed by a `RET`.
+
+Total cycle cost:
+
+```
+CALL = 8 cycles
+RET  = 7 cycles
+Total = 15 cycles
+```
+
+This represents the minimum overhead required to invoke and return from a subroutine,
+excluding the execution of the subroutine body itself.
+
+The cost arises from:
+
+- saving the return address onto the stack
+- updating the Program Counter
+- restoring the Program Counter on return
+
+Cycle counts include instruction fetch, decode, and execution phases, and are derived
+from the current microcode implementation.
+
+---
+
 ## Architectural Invariants
 
 - SP points to the top element of the stack when the stack is non-empty.
