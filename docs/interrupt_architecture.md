@@ -22,7 +22,7 @@ This design prioritizes simplicity while leaving room for future expansion
 The interrupt system was designed with the following goals:
 
 - Minimal additional hardware
-- Deterministic interrupt timing
+- Predictable interrupt timing
 - Compatibility with the stack-based call/return system
 - Easy future expansion
 
@@ -41,9 +41,9 @@ External hardware asserts this line when it requires service from the CPU.
 
 An interrupt is taken only when all of the following are true:
 
-1. The `INT` signal is asserted
-2. Interrupts are enabled
-3. The CPU has completed executing the current instruction
+1. The `INT` signal is asserted  
+2. Interrupts are enabled  
+3. The CPU has completed executing the current instruction  
 
 If these conditions are met, the CPU begins the interrupt handling sequence.
 
@@ -55,9 +55,9 @@ Interrupts are checked **only after an instruction finishes executing**.
 
 This ensures:
 
-- Instructions are never partially executed
-- CPU state remains consistent
-- Interrupt behavior is predictable
+- Instructions are never partially executed  
+- CPU state remains consistent  
+- Interrupt behavior is predictable  
 
 Conceptually the instruction cycle becomes:
 ```
@@ -72,10 +72,10 @@ If no interrupt is pending, execution continues normally.
 
 When an interrupt is accepted, the CPU performs the following steps:
 
-1. Push the current Program Counter (PC) onto the stack
-2. Disable further interrupts
-3. Load the interrupt vector into the PC
-4. Begin executing the interrupt service routine
+1. Push the current Program Counter (PC) onto the stack  
+2. Disable further interrupts  
+3. Load the interrupt vector into the PC  
+4. Begin executing the interrupt service routine  
 
 Example micro-operations:
 ```
@@ -111,9 +111,9 @@ Example memory layout:
 
 The interrupt service routine is responsible for:
 
-- Handling the interrupting device
-- Clearing the interrupt source
-- Returning control to the interrupted program
+- Handling the interrupting device  
+- Clearing the interrupt source  
+- Returning control to the interrupted program  
 
 Typical ISR structure:
 ```
@@ -121,20 +121,20 @@ ISR_START:
     ; service hardware
     ; clear interrupt source
 
-    RETI
+    IRET
 ```
 
 ---
 
 ## Returning From an Interrupt
 
-Interrupt service routines return using the `RETI` instruction.
+Interrupt service routines return using the `IRET` instruction.
 
-`RETI` performs the following operations:
+`IRET` performs the following operations:
 
-1. Restore the saved Program Counter from the stack
-2. Re-enable interrupts
-3. Resume execution of the interrupted program
+1. Restore the saved Program Counter from the stack  
+2. Re-enable interrupts  
+3. Resume execution of the interrupted program  
 
 Example micro-operations:
 ```
@@ -185,17 +185,44 @@ interrupts to be re-enabled within the ISR.
 
 ---
 
+## Interrupt Overhead
+
+Interrupt handling introduces a fixed control-flow overhead due to the
+entry and return sequences.
+
+The total interrupt overhead consists of:
+
+- interrupt entry (push PC and redirect execution)  
+- interrupt return (`IRET`)  
+
+Approximate cycle cost:
+```
+Entry ≈ 5 cycles
+IRET  = 12 cycles
+Total ≈ 17 cycles
+```
+
+This overhead is incurred before any useful work is performed inside the ISR.
+
+Compared to standard subroutine calls, interrupts introduce slightly higher
+overhead due to additional control flow handling and interrupt state management.
+
+Cycle counts are derived from the current microcode implementation and may
+change if the microarchitecture is modified.
+
+---
+
 ## Future Extensions
 
 The interrupt architecture is intentionally simple but allows for expansion.
 
 Possible future improvements include:
 
-- Multiple interrupt lines
-- Interrupt priority encoding
-- Vectored interrupts
-- Interrupt masking registers
-- Interrupt acknowledge signals
+- Multiple interrupt lines  
+- Interrupt priority encoding  
+- Vectored interrupts  
+- Interrupt masking registers  
+- Interrupt acknowledge signals  
 
 These additions can be implemented without fundamentally changing the current
 interrupt mechanism.
@@ -209,11 +236,11 @@ asynchronous external events.
 
 Key characteristics:
 
-- Single interrupt input
-- Fixed interrupt vector
-- Stack-based return address storage
-- Interrupt check after each instruction
-- Nested interrupts disabled by default
+- Single interrupt input  
+- Fixed interrupt vector  
+- Stack-based return address storage  
+- Interrupt check after each instruction  
+- Nested interrupts disabled by default  
 
 This design keeps the hardware simple while still allowing responsive
 interaction with external devices.
