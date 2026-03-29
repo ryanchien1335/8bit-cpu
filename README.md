@@ -1,28 +1,27 @@
 # 8-Bit Microcoded CPU
 
-A custom-designed 8-bit CPU built in Logisim with a Python assembler, supporting microcoded control flow, stack-based subroutines, and memory-mapped I/O.
+A custom-designed 8-bit CPU built in Logisim with a Python assembler, supporting microcoded control flow, stack-based subroutines, and opcode-selectable I/O behavior.
 
-This project explores the internal architecture of a simple processor and demonstrates how complex behaviors such as keyboard input routines and subroutine calls can be implemented entirely through microcode sequencing.
+This project explores the internal architecture of a simple processor and demonstrates how behaviors such as keyboard input routines, subroutine calls, and interrupt handling can be implemented through microcode sequencing.
 
 ## Table of Contents
 
+- [Table of Contents](#table-of-contents)
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [CPU Block Diagram](#cpu-block-diagram)
 - [Instruction Format](#instruction-format)
 - [Instruction Set](#instruction-set)
 - [Stack Architecture](#stack-architecture)
-- [CALL and RET](#call-and-ret)
+- [Interrupt Architecture](#interrupt-architecture)
 - [Execution Model](#execution-model)
-- [Microcode Architecture](#microcode-architecture)
-- [Example Microcode (ADD Instruction)](#example-microcode-add-instruction)
-- [Instruction Cycle Timing](#instruction-cycle-timing)
 - [Keyboard Input Routine](#keyboard-input-routine)
-- [Memory Map](#memory-map)
+- [I/O Addressing Model](#io-addressing-model)
+- [Special I/O Instructions](#special-io-instructions)
 - [Example Program](#example-program)
 - [Assembler](#assembler)
 - [Design Philosophy](#design-philosophy)
-- [Future Improvements](#future-improvements)
+- [Project Roadmap](#project-roadmap)
 
 ---
 
@@ -30,18 +29,44 @@ This project explores the internal architecture of a simple processor and demons
 
 This CPU implements a multi-cycle microcoded architecture designed to prioritize clarity, correctness, and extensibility rather than raw performance.
 
-The processor executes instructions across multiple clock cycles using a shared data bus and a microprogrammed control unit. Each instruction is broken into smaller micro-operations stored in a microcode ROM.
+The processor executes instructions across multiple clock cycles using a shared data bus and a microprogrammed control unit. Each instruction is broken into smaller micro-operations stored in microcode ROM.
 
 Key architectural ideas explored in this project include:
 
 - Microcoded control units
 - Stack-based subroutine calls
-- Memory-mapped I/O
+- Interrupt entry/return
+- Opcode-selectable I/O and device access
 - Conditional branching
 - Shared-bus architectures
 - Multi-cycle instruction execution
 
-The project also includes a Python assembler capable of translating assembly code into machine instructions compatible with the CPU.
+---
+
+## Architecture
+
+Core datapath and control components:
+
+- 8-bit accumulator-based datapath
+- Program Counter, Instruction Register, Stack Pointer, and flag register
+- Shared internal bus
+- Microcode ROM control sequencing
+- RAM with microcode-defined I/O/device access paths
+
+Related documentation:
+
+- `docs/architecture_report.md`
+- `docs/isa.md`
+- `docs/stack_microarchitecture.md`
+- `docs/interrupt_architecture.md`
+
+---
+
+## CPU Block Diagram
+
+Top-level CPU layout (latest implementation snapshot):
+
+![8-bit CPU block diagram](cpu_evolution/2026-03-25_CPU_stack_and_interrupt_implementation_and_RAM_expansion.png)
 
 ---
 
@@ -51,12 +76,13 @@ Instructions are composed of either 1 byte or 2 bytes. The CPU automatically per
 
 ### Single-Byte Instruction
 
-These instructions contain only an opcode. The lower 4 bits are ignored.
+These instructions contain a primary opcode and may use the lower 4 bits as a sub-op selector for instruction variants.
+
 ```
-[ OPCODE (4 bits) ][ UNUSED (4 bits) ]
+[ OPCODE (4 bits) ][ SUB-OP / MODE (4 bits) ]
 
  7   6   5   4   3   2   1   0
-OP3 OP2 OP1 OP0  X   X   X   X
+OP3 OP2 OP1 OP0 S3  S2  S1  S0
 ```
 
 Used by: `NOP`, `HLT`, `PUSH`, `POP`, `RET`, `IRET`, `EI`, `LDK`, `OUT`
@@ -64,12 +90,13 @@ Used by: `NOP`, `HLT`, `PUSH`, `POP`, `RET`, `IRET`, `EI`, `LDK`, `OUT`
 ### Two-Byte Instruction
 
 Instructions that reference memory or program addresses use a second byte for a full 8-bit operand.
+
 ```
-Byte 1: [ OPCODE (4 bits) ][ UNUSED (4 bits) ]
+Byte 1: [ OPCODE (4 bits) ][ SUB-OP / MODE (4 bits) ]
 Byte 2: [ OPERAND (8 bits) ]
 
 Byte 1:  7   6   5   4   3   2   1   0
-        OP3 OP2 OP1 OP0  X   X   X   X
+        OP3 OP2 OP1 OP0 S3  S2  S1  S0
 
 Byte 2:  7   6   5   4   3   2   1   0
          A7  A6  A5  A4  A3  A2  A1  A0
@@ -100,20 +127,71 @@ Used by: `LDA`, `STA`, `ADD`, `SUB`, `CALL`, `JMP`, `JZ`, `JC`
 | 1110   | JMP addr    | Unconditional jump |
 | 1111   | HLT         | Halt CPU |
 
+Special one-byte encodings:
+
+- `LDK` = `0x1E`
+- `OUT` = `0x2F`
+
+---
+
+## Stack Architecture
+
+The stack grows downward in RAM and is managed by the Stack Pointer (`SP`).
+
+Push behavior:
+
+```
+SP <- SP - 1
+RAM[SP] <- value
+```
+
+Pop behavior:
+
+```
+value <- RAM[SP]
+SP <- SP + 1
+```
+
+`CALL` and `RET` use this same mechanism for return-address storage.
+
+---
+
+## Interrupt Architecture
+
+Interrupts are checked after each completed instruction.
+
+When an interrupt is accepted:
+
+1. Push current `PC` to stack
+2. Disable interrupts
+3. Jump to fixed interrupt vector `0xF0`
+
+`IRET` restores `PC` from stack and re-enables interrupts.
+
+---
+
+## Execution Model
+
+Conceptual instruction cycle:
+
+```
+FETCH -> DECODE -> EXECUTE -> CHECK_INTERRUPT -> FETCH
+```
+
+No pipelining is used. Instructions complete before the next instruction begins.
+
 ---
 
 ## Keyboard Input Routine
 
-Address 14 is mapped to keyboard input. Executing:
-```
-LDA 14
-```
+Keyboard input can be reached through the `LDA` family path (including legacy-compatible `LDA 14` behavior in current microcode).
 
-activates a microcoded routine that reads a multi-digit decimal number.
+A keyboard-read variant activates a microcoded routine that reads a multi-digit decimal number.
 
-The routine accepts ASCII digits `0-9`, accumulates them as a decimal number, and terminates on Enter (`0x0D`) or invalid input. The final value is stored in Register A.
+The routine accepts ASCII digits `0-9`, accumulates them as a decimal number, and terminates on Enter (`0x0D`) or invalid input. The final value is stored in Register `A`.
 
 Algorithm:
+
 ```
 A <- 0
 
@@ -126,46 +204,47 @@ loop:
     repeat
 ```
 
-Example input: `123`  
-Result: `A = 123`
-
 ---
 
-## Memory Map
+## I/O Addressing Model
 
-The CPU uses memory-mapped I/O, meaning certain addresses interact with hardware devices rather than physical RAM.
+With double-fetch instruction flow, the first fetch byte can use bits `0-3` as a sub-op selector inside an opcode family.
+
+This allows instruction variants such as `LDK`, `LDA_CHAR`, or `OUT` to be selected by the first byte while keeping the second fetch byte fully available as an 8-bit operand when needed.
+
+Current practical model:
+
+- `LDA` family variants are selected by low-nibble sub-op bits in fetch byte 1
+- `STA` family variants are selected by low-nibble sub-op bits in fetch byte 1
+- fetch byte 2 remains a full operand byte for address/immediate use
+
+Legacy memory-mapped addresses (for microcode compatibility):
 
 | Address | Purpose |
 |---------|---------|
-| 0 - 13  | General-purpose RAM |
-| 14      | Keyboard input (memory-mapped I/O) |
-| 15      | Output register (memory-mapped I/O) |
-| 16 - 255 | General-purpose RAM |
-
-Examples:
-```
-LDA 14   ; Load value from keyboard input hardware into A
-STA 15   ; Write A to the output register (LED display)
-```
+| 14      | Keyboard input path (legacy-compatible) |
+| 15      | Output register path (legacy-compatible) |
 
 ---
 
 ## Special I/O Instructions
 
-In addition to memory-mapped I/O, the CPU provides dedicated single-byte instructions for input and output.
+The CPU provides dedicated I/O instruction variants (selected through opcode sub-op bits):
 
 ```
-LDK   ; Read decimal input from keyboard into A
-OUT   ; Write A to output register
+LDA_CHAR ; Read one keyboard character (ASCII) into A
+LDK      ; Read decimal input from keyboard into A
+OUT      ; Write A to output register
 ```
 
-These instructions provide more compact encoding by avoiding an operand fetch.
+These variants are selected in fetch byte 1. Current documented encodings include `LDA_CHAR = 0x1D`, `LDK = 0x1E`, and `OUT = 0x2F`.
 
 ---
 
 ## Example Program
 
 ### Infinite Loop
+
 ```
 start:
     LDA 0
@@ -175,22 +254,22 @@ start:
 ```
 
 ### Machine Code
+
 ```
-00000001 00000000
-00000011 00000001
-00000010 00000010
+00010000 00000000
+00110000 00000001
+00100000 00000010
 11100000 00000000
 ```
-
-*(Each two-byte instruction shown as two bytes.)*
 
 ---
 
 ## Assembler
 
-Assembly programs are converted into machine code using a Python assembler.
+Assembly programs are converted into machine code using the Python assembler.
 
 Run with:
+
 ```
 python assembler.py program.asm
 ```
@@ -199,7 +278,9 @@ Features:
 
 - Label resolution
 - Opcode encoding
-- Binary output generation
+- Decimal/hex/binary operand parsing
+- Special I/O variant support (`LDK`, `OUT`)
+- Hex byte output generation
 
 ---
 
@@ -211,17 +292,17 @@ This CPU emphasizes:
 - Microcode-driven behavior
 - Minimal hardware duplication
 
-By avoiding pipelining and executing one instruction at a time, the architecture eliminates data hazards, control hazards, and pipeline stalls. This makes the design ideal for learning core CPU architecture concepts.
+By avoiding pipelining and executing one instruction at a time, the architecture remains easier to reason about and debug.
 
 ---
 
-## Future Improvements
+## Project Roadmap
 
-Potential expansions include:
+Current status: **Phase 0 completed** (microcoded control, memory-mapped I/O, branching, assembler, stack support, interrupt support, and expanded RAM).
 
-- Interrupt handling
-- Hardware multiplication
-- Larger RAM address space
-- Pipelined CPU variant
-- Cache hierarchy experiments
-- Branch prediction research
+Planned direction for future work:
+
+- **Phase 1:** HDL rewrite and FPGA implementation
+- **Phase 2:** Pipelined RISC redesign
+- **Phase 3:** Memory hierarchy / cache experiments
+- **Phase 4:** Hardware accelerator exploration
