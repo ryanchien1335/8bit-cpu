@@ -31,17 +31,17 @@ requires an extended operand.
 
 ### Single-Byte Instruction
 
-These instructions contain only an opcode. The lower 4 bits are ignored.
+These instructions contain an opcode and may use the lower 4 bits as a sub-op selector for instruction variants.
 
 ```
-[ OPCODE (4 bits) ][ UNUSED (4 bits) ]
+[ OPCODE (4 bits) ][ SUB-OP / MODE (4 bits) ]
 ```
 
 #### Bit Layout
 
 ```
 7   6   5   4   3   2   1   0
-OP3 OP2 OP1 OP0  X   X   X   X
+OP3 OP2 OP1 OP0 S3  S2  S1  S0
 ```
 
 #### Used by
@@ -53,6 +53,7 @@ OP3 OP2 OP1 OP0  X   X   X   X
 - RET
 - IRET
 - EI
+- LDA_CHAR
 - LDK
 - OUT
 
@@ -66,7 +67,7 @@ to obtain an **8-bit operand**.
 #### Byte 1
 
 ```
-[ OPCODE (4 bits) ][ UNUSED (4 bits) ]
+[ OPCODE (4 bits) ][ SUB-OP / MODE (4 bits) ]
 ```
 
 #### Byte 2
@@ -80,7 +81,7 @@ to obtain an **8-bit operand**.
 ```
 Byte 1
 7   6   5   4   3   2   1   0
-OP3 OP2 OP1 OP0  X   X   X   X
+OP3 OP2 OP1 OP0 S3  S2  S1  S0
 
 Byte 2
 7   6   5   4   3   2   1   0
@@ -122,6 +123,18 @@ The operand is taken entirely from the **second byte**.
 | 1101 | JC addr | Jump if Carry flag = 1 |
 | 1110 | JMP addr | Unconditional jump |
 | 1111 | HLT | Halt CPU |
+
+---
+
+### Opcode Family Variants (Sub-Op Nibble)
+
+The lower nibble of byte 1 can select variants within an opcode family.
+
+Current documented variants:
+
+- `0x1D` → `LDA_CHAR` (single-character keyboard read into `A`)
+- `0x1E` → `LDK` (multi-digit decimal keyboard read into `A`)
+- `0x2F` → `OUT` (write `A` to output path)
 
 ---
 
@@ -171,7 +184,7 @@ POP
 RET
 ```
 
-The **lower 4 bits of the first instruction byte are ignored**.
+The **lower 4 bits of the first instruction byte can be used as a sub-op selector**.
 
 ---
 
@@ -179,6 +192,23 @@ The **lower 4 bits of the first instruction byte are ignored**.
 
 In addition to memory-mapped I/O, the CPU provides dedicated single-byte instructions
 for input and output.
+
+---
+
+### LDA_CHAR — Single-Character Keyboard Input
+
+```
+LDA_CHAR
+```
+
+Encoding: `0x1D`
+
+`LDA_CHAR` reads **one character** from the keyboard input path and loads its
+ASCII value into **Register A**.
+
+If multiple characters are pending, the leftmost character is consumed first.
+
+This instruction is used for character-by-character parsing workflows.
 
 ---
 
@@ -249,7 +279,7 @@ writes the value in **Register A** to the **output hardware (LED display)**.
 
 ### Note
 
-Equivalent functionality is also available through dedicated instructions (`LDK`, `OUT`)
+Equivalent functionality is also available through dedicated instruction variants (`LDA_CHAR`, `LDK`, `OUT`)
 for more compact instruction encoding.
 
 ---
