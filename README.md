@@ -306,3 +306,13 @@ Planned direction for future work:
 - **Phase 2:** Pipelined RISC redesign
 - **Phase 3:** Memory hierarchy / cache experiments
 - **Phase 4:** Hardware accelerator exploration
+
+### Phase 1 Progress Snapshot (Verilog / ModelSim)
+
+To avoid confusion between documentation lag and implementation progress:
+
+- Foundations, module bring-up, simulation setup, datapath reconstruction, and control-unit integration have already been actively developed and tested in the HDL track.
+- The currently active focus is the following sequence: interrupt-focused simulation validation, debug/edge-case cleanup, and FPGA bring-up preparation.
+
+This repository remains the canonical record for the Logisim-first architecture and assembler, while the HDL reconstruction artifacts continue to be expanded and documented incrementally.
+
