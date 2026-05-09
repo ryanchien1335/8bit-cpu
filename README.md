@@ -1,8 +1,8 @@
 # 8-Bit Microcoded CPU
 
-A custom-designed 8-bit CPU built in Logisim with a Python assembler, supporting microcoded control flow, stack-based subroutines, and opcode-selectable I/O behavior.
+A custom-designed 8-bit CPU originally built in Logisim and now being reconstructed in Verilog, with a Python assembler, microcoded control flow, stack-based subroutines, and opcode-selectable I/O behavior.
 
-This project explores the internal architecture of a simple processor and demonstrates how behaviors such as keyboard input routines, subroutine calls, and interrupt handling can be implemented through microcode sequencing.
+This project explores the internal architecture of a simple processor and demonstrates how behaviors such as keyboard input routines, subroutine calls, interrupt handling, and assembler-driven program loading can be implemented through microcode sequencing and hardware-description design.
 
 ## Table of Contents
 
@@ -20,6 +20,7 @@ This project explores the internal architecture of a simple processor and demons
 - [Special I/O Instructions](#special-io-instructions)
 - [Example Program](#example-program)
 - [Assembler](#assembler)
+- [Verilog / ModelSim Implementation](#verilog--modelsim-implementation)
 - [Design Philosophy](#design-philosophy)
 - [Project Roadmap](#project-roadmap)
 
@@ -28,6 +29,8 @@ This project explores the internal architecture of a simple processor and demons
 ## Overview
 
 This CPU implements a multi-cycle microcoded architecture designed to prioritize clarity, correctness, and extensibility rather than raw performance.
+
+The processor was originally designed in Logisim as a visual CPU architecture. The project has since been extended into a Verilog implementation, where the same CPU concepts are recreated as hardware-description modules and tested through ModelSim simulation.
 
 The processor executes instructions across multiple clock cycles using a shared data bus and a microprogrammed control unit. Each instruction is broken into smaller micro-operations stored in microcode ROM.
 
@@ -40,6 +43,9 @@ Key architectural ideas explored in this project include:
 - Conditional branching
 - Shared-bus architectures
 - Multi-cycle instruction execution
+- Verilog hardware-description design
+- Testbench-based simulation and debugging
+- Assembler-to-ROM program loading
 
 ---
 
@@ -64,7 +70,7 @@ Related documentation:
 
 ## CPU Block Diagram
 
-Top-level CPU layout (latest implementation snapshot):
+Top-level CPU layout from the Logisim implementation:
 
 ![8-bit CPU block diagram](cpu_evolution/2026-03-25_CPU_stack_and_interrupt_implementation_and_RAM_expansion.png)
 
@@ -282,6 +288,39 @@ Features:
 - Special I/O variant support (`LDK`, `OUT`)
 - Hex byte output generation
 
+The assembler now generates a `program.mem` file that can be loaded directly by the Verilog `program_rom.v` module. This allows assembled programs to be tested in the Verilog CPU simulation without manually writing each machine-code byte into the testbench.
+
+Conceptual flow:
+
+```
+program.asm -> assembler.py -> program.mem -> program_rom.v -> Verilog CPU simulation
+```
+
+---
+
+## Verilog / ModelSim Implementation
+
+In addition to the original Logisim design, this project now includes an active Verilog reconstruction of the CPU.
+
+The Verilog version rebuilds the CPU as hardware-description modules and verifies behavior through ModelSim testbenches and waveform analysis.
+
+Completed Verilog / simulation work includes:
+
+- Basic Verilog module setup
+- Register, PC, SP, ALU, RAM, and program ROM modules
+- Shared-bus behavior using mux-based routing
+- Datapath reconstruction
+- Microcode ROM representation
+- Microprogram counter and decode sequencing
+- Control-signal integration
+- Interrupt enable and interrupt pending logic
+- Top-level CPU integration
+- Program loading through assembler-generated `program.mem`
+- Simulation of real instruction execution
+- Debugging of timing, sequencing, and edge-case behavior through Day 28 of the Phase 1 guide
+
+The current Verilog implementation is being prepared for FPGA deployment, so the Logisim version remains the original visual architecture reference while the HDL version represents the next implementation stage.
+
 ---
 
 ## Design Philosophy
@@ -294,11 +333,17 @@ This CPU emphasizes:
 
 By avoiding pipelining and executing one instruction at a time, the architecture remains easier to reason about and debug.
 
+The project intentionally starts with a visual CPU design before moving into Verilog. This makes it easier to understand the architecture first, then rebuild the same ideas in a form that can be simulated, synthesized, and eventually run on FPGA hardware.
+
 ---
 
 ## Project Roadmap
 
-Current status: **Phase 0 completed** (microcoded control, memory-mapped I/O, branching, assembler, stack support, interrupt support, and expanded RAM).
+Current status: **Phase 0 completed** and **Phase 1 Verilog / ModelSim work completed through Day 28**.
+
+Phase 0 includes microcoded control, memory-mapped I/O, opcode-selectable I/O behavior, branching, assembler support, stack support, interrupt support, and expanded RAM.
+
+Phase 1 has progressed through Verilog foundations, module bring-up, simulation setup, datapath reconstruction, control-unit integration, assembler-to-ROM program loading, interrupt-focused simulation, and debugging/edge-case cleanup.
 
 Planned direction for future work:
 
@@ -312,7 +357,8 @@ Planned direction for future work:
 To avoid confusion between documentation lag and implementation progress:
 
 - Foundations, module bring-up, simulation setup, datapath reconstruction, and control-unit integration have already been actively developed and tested in the HDL track.
-- The currently active focus is the following sequence: interrupt-focused simulation validation, debug/edge-case cleanup, and FPGA bring-up preparation.
+- The Python assembler now outputs `program.mem`, which is loaded directly by `program_rom.v` for Verilog CPU simulation.
+- Real instruction execution, interrupt behavior, and major timing/sequencing issues have been tested and debugged through Day 28 of the Phase 1 guide.
+- The currently active focus is FPGA bring-up preparation, beginning with FPGA toolchain setup.
 
 This repository remains the canonical record for the Logisim-first architecture and assembler, while the HDL reconstruction artifacts continue to be expanded and documented incrementally.
-
