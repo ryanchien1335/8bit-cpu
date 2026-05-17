@@ -44,10 +44,13 @@ Current module work includes the following major components:
 - `program_rom.v`
 - `microcode_rom.v`
 - `upc.v`
+- `keyboard.v`
+- `button_pulse.v`
 - `mini_cpu.v`
 - `main_cpu.v`
+- `fpga_top.v`
 
-Together, these modules provide the foundation for datapath execution, control sequencing, memory access, stack behavior, and top-level CPU integration.
+Together, these modules provide the foundation for datapath execution, control sequencing, memory access, stack behavior, keyboard/FIFO input, and top-level CPU integration.
 
 ## Testbench Coverage
 
@@ -66,15 +69,19 @@ System-level benches are used to observe instruction execution, opcode dispatch,
 
 ## Execution and Validation
 
-The current focus of this HDL phase is simulation-based validation in ModelSim.
+The current focus of this HDL phase is simulation-based validation and FPGA preparation.
 
 This includes:
-- reconstructing the documented CPU architecture in Verilog
-- verifying datapath and control behavior through testbenches
-- running instruction-level execution tests
-- refining sequencing and integration details before hardware deployment
 
-At this stage, the Verilog implementation should be understood as an active reconstruction and validation effort rather than a finalized FPGA deployment.
+- reconstructing the documented CPU architecture in Verilog
+- verifying datapath and control behavior through unit and system-level testbenches
+- running instruction-level execution tests in ModelSim
+- validating ROM-based program execution using `program.mem`
+- validating microcoded control sequencing using `microcode.mem`
+- testing keyboard FIFO input behavior through `LDA_CHAR` and `OUT`
+- preparing the design for FPGA deployment through Vivado synthesis, implementation, timing analysis, and bitstream generation
+
+At this stage, the Verilog implementation has been validated through ModelSim testbenches and prepared for FPGA deployment. Physical FPGA board testing is still pending.
 
 ## Notes
 
@@ -94,3 +101,19 @@ The main repository README remains the primary description of the CPU’s archit
 This folder should be understood as the HDL realization of that same system.
 
 In other words, the Logisim implementation established the architectural design, while this Verilog / ModelSim implementation is rebuilding that design in a form suitable for simulation, verification, and eventual FPGA deployment.
+
+## Current Status
+
+The Verilog implementation has progressed beyond module reconstruction into integrated CPU validation.
+
+Recent work includes:
+
+- end-to-end CPU execution through `main_cpu.v`
+- ROM-based program execution using `program.mem`
+- microcoded control sequencing using `microcode.mem`
+- keyboard FIFO integration for input-style behavior
+- `LDA_CHAR` and `OUT` testing through system-level simulation
+- FIFO order validation using ModelSim testbenches
+- hardware-facing wrapper preparation for later FPGA deployment
+
+Physical FPGA board testing is still pending.
