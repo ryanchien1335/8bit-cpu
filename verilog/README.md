@@ -79,9 +79,10 @@ This includes:
 - validating ROM-based program execution using `program.mem`
 - validating microcoded control sequencing using `microcode.mem`
 - testing keyboard FIFO input behavior through `LDA_CHAR` and `OUT`
-- preparing the design for FPGA deployment through Vivado synthesis, implementation, timing analysis, and bitstream generation
+- synthesizing the design via Xilinx Vivado and generating a bitstream
+- deploying the CPU to a Basys 3 (Artix-7) FPGA
 
-At this stage, the Verilog implementation has been validated through ModelSim testbenches and prepared for FPGA deployment. Physical FPGA board testing is still pending.
+The Verilog implementation has been fully validated through ModelSim testbenches and successfully deployed to physical hardware. The CPU runs custom assembly programs mapped to the board's physical switches and 7-segment display.
 
 ## Notes
 
@@ -104,16 +105,15 @@ In other words, the Logisim implementation established the architectural design,
 
 ## Current Status
 
-The Verilog implementation has progressed beyond module reconstruction into integrated CPU validation.
+The Verilog implementation has progressed beyond module reconstruction and integrated CPU validation, culminating in successful physical hardware deployment.
 
 Recent work includes:
-
 - end-to-end CPU execution through `main_cpu.v`
 - ROM-based program execution using `program.mem`
 - microcoded control sequencing using `microcode.mem`
 - keyboard FIFO integration for input-style behavior
 - `LDA_CHAR` and `OUT` testing through system-level simulation
 - FIFO order validation using ModelSim testbenches
-- hardware-facing wrapper preparation for later FPGA deployment
+- hardware-facing wrapper integration and bitstream generation via Xilinx Vivado
 
-Physical FPGA board testing is still pending.
+Physical FPGA board testing has been successfully completed. The design is fully deployed to a Basys 3 board, executing bare-metal assembly programs that interact with physical switches and the 7-segment display.
