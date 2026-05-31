@@ -339,26 +339,25 @@ The project intentionally starts with a visual CPU design before moving into Ver
 
 ## Project Roadmap
 
-Current status: **Phase 0 completed** and **Phase 1 Verilog / ModelSim work completed through Day 28**.
+Current status: **Phase 0 completed** and **Phase 1 completed**.
 
 Phase 0 includes microcoded control, memory-mapped I/O, opcode-selectable I/O behavior, branching, assembler support, stack support, interrupt support, and expanded RAM.
 
-Phase 1 has progressed through Verilog foundations, module bring-up, simulation setup, datapath reconstruction, control-unit integration, assembler-to-ROM program loading, interrupt-focused simulation, and debugging/edge-case cleanup.
+Phase 1 progressed through Verilog foundations, module bring-up, simulation setup, datapath reconstruction, control-unit integration, assembler-to-ROM program loading, interrupt-focused simulation, debugging/edge-case cleanup, and culminated in successful synthesis and deployment to physical FPGA hardware.
 
 Planned direction for future work:
 
-- **Phase 1:** HDL rewrite and FPGA implementation
-- **Phase 2:** Pipelined RISC redesign
+- **Phase 2:** Pipelined RISC redesign (Active focus)
 - **Phase 3:** Memory hierarchy / cache experiments
 - **Phase 4:** Hardware accelerator exploration
 
-### Phase 1 Progress Snapshot (Verilog / ModelSim)
+### Phase 1 Technical Milestones (Verilog / ModelSim / FPGA Validation)
 
-To avoid confusion between documentation lag and implementation progress:
+Key achievements from the completed HDL track include:
 
-- Foundations, module bring-up, simulation setup, datapath reconstruction, and control-unit integration have already been actively developed and tested in the HDL track.
-- The Python assembler now outputs `program.mem`, which is loaded directly by `program_rom.v` for Verilog CPU simulation.
-- Real instruction execution, interrupt behavior, and major timing/sequencing issues have been tested and debugged through Day 28 of the Phase 1 guide.
-- The currently active focus is FPGA bring-up preparation, beginning with FPGA toolchain setup.
+- Foundations, module bring-up, simulation setup, datapath reconstruction, and control-unit integration were successfully developed and tested.
+- The Python assembler outputs `program.mem`, which is loaded directly by `program_rom.v` for Verilog CPU simulation and Vivado Block RAM initialization.
+- Real instruction execution, interrupt behavior, and major timing/sequencing issues have been thoroughly tested and debugged.
+- The FPGA implementation milestone was reached: the design was synthesized via Xilinx Vivado and successfully deployed to a Basys 3 FPGA, verifying bare-metal assembly execution and physical I/O interaction.
 
 This repository remains the canonical record for the Logisim-first architecture and assembler, while the HDL reconstruction artifacts continue to be expanded and documented incrementally.
