@@ -1,5 +1,9 @@
 # Verilog / ModelSim Implementation
 
+
+https://github.com/user-attachments/assets/e33241ef-8140-497c-8b13-d668ca6f8780
+
+
 This folder contains the HDL reconstruction of the 8-bit microcoded CPU project.
 
 The original CPU was first developed in Logisim with a Python assembler, microcoded control flow, stack-based subroutines, interrupt handling, and opcode-selectable I/O behavior. This implementation extends that work into Verilog and ModelSim in order to recreate the architecture in HDL, validate behavior through simulation, and prepare the design for later FPGA deployment.
